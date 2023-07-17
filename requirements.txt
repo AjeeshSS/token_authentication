@@ -1,0 +1,6 @@
+Django
+django rest framework
+redis  cache
+
+# pip install djangorestframework
+# pip install django-redis-cache
