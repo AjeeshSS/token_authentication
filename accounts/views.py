@@ -12,7 +12,12 @@ from .serializers import UserRegisterSerializer, UserDataSerializer
 from django.http import Http404
 from django.contrib.auth import get_user_model
 User = get_user_model()   
+from django.conf import settings
+from django.core.cache.backends.base import DEFAULT_TIMEOUT
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
 
+CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
 
 class register(APIView):
@@ -37,7 +42,13 @@ class getuser(APIView):
     permission_classes = (IsAuthenticated,)
     
     def get(self, request):
-        content={'user':str(request.user), 'userid':str(request.user.id)}
+        if cache.get('cacheContent'):
+            print('data from cache.')
+            content = cache.get('cacheContent')
+        else:
+            content={'user':str(request.user), 'userid':str(request.user.id)}
+            print('data from db.')
+            cache.set('cacheContent', content)
         return Response(content)
     
 class userDetails(APIView):
@@ -46,7 +57,14 @@ class userDetails(APIView):
     def get_object(self, pk):
         """function to get user details"""
         try:
-            return User.objects.get(pk=pk)
+            if cache.get('userCache'):
+                print('data from cache.')
+                user = cache.get('userCache')
+            else:
+                user = User.objects.get(pk=pk)
+                print('data from db.')
+                cache.set('userCache', user)
+            return user
         except:
             raise Http404
             
